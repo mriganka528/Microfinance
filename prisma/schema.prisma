@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String     @unique
+  username       String     @unique
+  email          String     @unique
+  password       String
+  role           UserRole   @default(USER)
+  contactNumber  String
+  dateRegistered DateTime   @default(now())
+  status         UserStatus @default(ACTIVE)
+  Loan           Loan[]
+  Payment        Payment[]
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Loan {
+  id                 String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId             String     @db.ObjectId
+  user               User       @relation(fields: [userId], references: [id])
+  loanAmount         Float
+  loanTerm           Int
+  status             LoanStatus @default(PENDING)
+  applicationDate    DateTime   @default(now())
+  approvalDate       DateTime?
+  repaymentStartDate DateTime?
+  Payment            Payment[]
+}
+
+enum LoanStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ACTIVE
+  COMPLETED
+}
+
+model Payment {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  loanId        String   @db.ObjectId
+  loan          Loan     @relation(fields: [loanId], references: [id])
+  userId        String   @db.ObjectId
+  user          User     @relation(fields: [userId], references: [id])
+  amountPaid    Float
+  paymentDate   DateTime @default(now())
+  paymentMethod String
+}
